@@ -1,16 +1,38 @@
 package debrepo
 
-import "runtime"
+import (
+	"errors"
+	"fmt"
+	"runtime"
+)
 
-// Architecture is the architecture of packages to retrieve from the
-// repositories.
-type Architecture string
+// DetectArchitecture returns the architecture that the compiled program is
+// targetting. It is returned in the format expected by a package repository.
+// It returns an empty string if a known mapping is unavailable.
+func DetectArchitecture() string {
+	return archMap[runtime.GOARCH]
+}
 
-// DetectArchitecture ...
-func DetectArchitecture() *Architecture {
-	arch := archMap[runtime.GOARCH]
-	_ = arch
-	return nil
+// ListArchitectures returns a list of architecture values that can be used when
+// making requests to package repositories.
+func ListArchitectures() []string {
+	archs := make([]string, len(architectures))
+	copy(archs, architectures[:])
+	return archs
+}
+
+// ValidateArchitecture returns an error if arch is not a supported
+// architecture.
+func ValidateArchitecture(arch string) error {
+	if len(arch) == 0 {
+		return errors.New("no architecture set")
+	}
+	for _, a := range architectures {
+		if a == arch {
+			return nil
+		}
+	}
+	return fmt.Errorf("architecture not supported: %s", arch)
 }
 
 // archMap is a mapping between Go architecture strings and those accepted by
