@@ -51,6 +51,9 @@ func ParseRepository(entry string) (*Repository, error) {
 	}, nil
 }
 
+// String returns the value of Repository as a string in the form found in a
+// source.list file:
+// 	deb http://ftp.debian.org/debian squeeze main contrib non-free
 func (r Repository) String() string {
 	if len(r.components) == 0 {
 		return ""
