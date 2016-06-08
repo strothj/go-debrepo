@@ -79,3 +79,16 @@ func TestRelease_CheckSignature_FromRelease(t *testing.T) {
 		t.Fatal("Release: expected signer not empty")
 	}
 }
+
+func TestRelease_ReadFields(t *testing.T) {
+	tr := NewTestRepository()
+	defer tr.Close()
+	release, _ := GetRelease(context.Background(), nil, tr.Repository())
+	fields, err := release.ReadFields()
+	if err != nil {
+		t.Fatalf("unexpected error reading fields: %v", err)
+	}
+	if expected, actual := "Ubuntu", fields["Origin"][0]; expected != actual {
+		t.Fatalf("field Origin: expected=%v actual=%v", expected, actual)
+	}
+}

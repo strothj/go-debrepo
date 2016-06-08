@@ -88,3 +88,8 @@ func (r *Release) CheckSignature(keyring openpgp.KeyRing) (signer *openpgp.Entit
 	}
 	return openpgp.CheckDetachedSignature(keyring, b, r.ArmoredSignature.Body)
 }
+
+// ReadFields reads the key/value fields from the Release file.
+func (r *Release) ReadFields() (Fields, error) {
+	return ReadFields(r.Plaintext)
+}
