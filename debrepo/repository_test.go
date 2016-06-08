@@ -37,19 +37,19 @@ var sourceTests = []struct {
 		entry:  "deb-invalid http://us.archive.ubuntu.com/ubuntu/ saucy universe",
 		source: nil,
 		str:    "",
-		err:    InvalidRepositorySourceEntry,
+		err:    ErrInvalidRepository,
 	},
 	{
 		entry:  "deb http://us.archive.ubuntu.com/ubuntu/ saucy  ", // extra whitespace
 		source: nil,
 		str:    "",
-		err:    InvalidRepositorySourceEntry,
+		err:    ErrInvalidRepository,
 	},
 	{
 		entry:  "deb #notURL saucy universe",
 		source: nil,
 		str:    "",
-		err:    InvalidRepositorySourceEntry,
+		err:    ErrInvalidRepository,
 	},
 }
 

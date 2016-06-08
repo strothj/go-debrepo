@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	// InvalidRepositorySourceEntry is a parsing error returned when a malformed
-	// package source line is provided to ParseRepository.
-	InvalidRepositorySourceEntry = Error("unable to parse source")
+	// ErrInvalidRepository is returned from ParseRepository() when entry is not
+	// in the format
+	// "deb http://ftp.debian.org/debian squeeze main contrib non-free".
+	ErrInvalidRepository = Error("unable to parse source")
 )
 
 // RepositoryList is a list of Debian package repositories.
@@ -30,18 +31,18 @@ type Repository struct {
 func ParseRepository(entry string) (*Repository, error) {
 	ss := strings.Split(entry, " ")
 	if len(ss) < 4 {
-		return nil, InvalidRepositorySourceEntry
+		return nil, ErrInvalidRepository
 	}
 	for _, field := range ss {
 		if len(field) == 0 {
-			return nil, InvalidRepositorySourceEntry
+			return nil, ErrInvalidRepository
 		}
 	}
 	if ss[0] != "deb" && ss[0] != "deb-src" {
-		return nil, InvalidRepositorySourceEntry
+		return nil, ErrInvalidRepository
 	}
 	if !isURL(ss[1]) {
-		return nil, InvalidRepositorySourceEntry
+		return nil, ErrInvalidRepository
 	}
 	return &Repository{
 		repoType:     ss[0],
