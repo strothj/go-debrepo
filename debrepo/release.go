@@ -1,9 +1,14 @@
 package debrepo
 
 import (
+	"bufio"
 	"bytes"
+	"crypto"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"io/ioutil"
 
@@ -18,6 +23,13 @@ var (
 	nop                             = func() {}
 	testhookGetReleaseFromInRelease = nop
 	testhookGetReleaseFromRelease   = nop
+)
+
+// Release fields corresponding to the release file table.
+const (
+	ReleaseFieldMD5Sum = "Md5sum"
+	ReleaseFieldSHA1   = "Sha1"
+	ReleaseFieldSHA256 = "Sha256"
 )
 
 // Release contains a listing of index files for the distribution and their
@@ -92,4 +104,62 @@ func (r *Release) CheckSignature(keyring openpgp.KeyRing) (signer *openpgp.Entit
 // ReadFields reads the key/value fields from the Release file.
 func (r *Release) ReadFields() (Fields, error) {
 	return ReadFields(r.Plaintext)
+}
+
+// ReadFileTable returns a map containing the index files present on the package
+// repository. The keys are the paths of the files relative to the directory of
+// the Release file. The values contain meta information describing which
+// checksum function was used, checksum value, and the file size.
+func (r *Release) ReadFileTable() (map[string]FileMeta, error) {
+	fields, err := r.ReadFields()
+	if err != nil {
+		return nil, err
+	}
+
+	fileTable := make(map[string]FileMeta)
+	err = parseFileTable(fileTable, fields[ReleaseFieldMD5Sum][0], crypto.MD5)
+	err = parseFileTable(fileTable, fields[ReleaseFieldSHA1][0], crypto.SHA1)
+	err = parseFileTable(fileTable, fields[ReleaseFieldSHA256][0], crypto.SHA256)
+	if err != nil {
+		return nil, err
+	}
+	return fileTable, nil
+}
+
+func parseFileTable(fileTable map[string]FileMeta, table string, hash crypto.Hash) error {
+	buf := bytes.NewBuffer([]byte(table))
+	scanner := bufio.NewScanner(buf)
+	scanner.Split(bufio.ScanWords)
+	for scanner.Scan() {
+		hashBytes, err := hex.DecodeString(scanner.Text())
+		if err != nil {
+			return err
+		}
+		if len(hashBytes) != hash.Size() {
+			return errors.New("invalid hash string in release file table")
+		}
+		if !scanner.Scan() {
+			return errors.New("missing file size in release file table")
+		}
+		size, err := strconv.ParseInt(scanner.Text(), 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse file size in release file table: %v", err)
+		}
+		if size < 0 {
+			return errors.New("file size in release file table is negative")
+		}
+		if !scanner.Scan() {
+			return errors.New("missing file name in release file table")
+		}
+		filepath := scanner.Text()
+		fileTable[filepath] = FileMeta{
+			HashSum: hashBytes,
+			Hash:    hash,
+			Size:    size,
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return nil
 }
