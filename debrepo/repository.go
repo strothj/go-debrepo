@@ -2,9 +2,12 @@ package debrepo
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
 const (
@@ -94,4 +97,10 @@ func (r Repository) ReleaseGPGURL() string {
 	}
 	u.Path = path.Join(u.Path, "dists", r.distribution, "Release.gpg")
 	return u.String()
+}
+
+// GetRelease downloads the release file and its associated signature file.
+// If client is nil, http.DefaultClient is used.
+func (r *Repository) GetRelease(ctx context.Context, client *http.Client) (*Release, error) {
+	return GetRelease(ctx, client, r)
 }
