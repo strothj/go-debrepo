@@ -69,6 +69,11 @@ func (r Repository) String() string {
 		strings.Join(r.components, " "))
 }
 
+// isZero returns true if Repository is empty.
+func (r Repository) isZero() bool {
+	return len(r.baseURI) == 0
+}
+
 // InReleaseURL returns the URL to the repository's InRelease file.
 func (r Repository) InReleaseURL() string {
 	u, err := url.Parse(r.baseURI)
